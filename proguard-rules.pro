@@ -1,0 +1,12 @@
+-keep class com.family.schedule.MainActivity { *; }
+-keep class com.family.schedule.EditActivity { *; }
+-keep class com.family.schedule.NotifyReceiver { *; }
+-keep class com.family.schedule.BootReceiver { *; }
+-keep class com.family.schedule.Data { *; }
+-keep class com.family.schedule.Data$Appt { *; }
+-keep class com.family.schedule.Data$Child { *; }
+-keep class com.family.schedule.Fmt { *; }
+-keep class com.family.schedule.Reminders { *; }
+-keep class com.family.schedule.R { *; }
+-dontwarn android.**
+-allowaccessmodification

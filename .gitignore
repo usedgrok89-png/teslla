@@ -1,0 +1,8 @@
+build/
+sdk/
+.avd/
+.avd2/
+shots/
+chain.pem
+proxy-ca.pem
+tools/truststore.jks

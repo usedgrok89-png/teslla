@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">جدول العيلة</string>
+
+    <string name="all">الكل</string>
+
+    <string name="add_appt">＋ موعد جديد</string>
+    <string name="add_child">＋ إضافة طفل</string>
+    <string name="empty">مفيش مواعيد.\nاضغط “موعد جديد” عشان تبدأ.</string>
+
+    <string name="appt_title">الموعد</string>
+    <string name="edit_appt">تعديل الموعد</string>
+    <string name="which_child">الطفل</string>
+    <string name="remind">التنبيه</string>
+    <string name="note">ملاحظة</string>
+    <string name="note_hint">اختياري</string>
+
+    <string name="save">حفظ</string>
+    <string name="del">حذف</string>
+    <string name="cancel">إلغاء</string>
+    <string name="add">إضافة</string>
+
+    <string name="child_name">اسم الطفل</string>
+    <string name="color">اللون</string>
+
+    <string name="mark_done">تم الإنجاز</string>
+    <string name="mark_not">مش تم بعد</string>
+    <string name="postpone">تأجيل لبكرة</string>
+    <string name="edit">تعديل</string>
+    <string name="done_lbl">تمت</string>
+    <string name="late">فات وقته</string>
+
+    <string name="no_remind">مفيش تنبيه</string>
+    <string name="min5">قبل 5 دقايق</string>
+    <string name="min10">قبل 10 دقايق</string>
+    <string name="min15">قبل 15 دقيقة</string>
+    <string name="min30">قبل 30 دقيقة</string>
+    <string name="hour1">قبل ساعة</string>
+    <string name="hour2">قبل ساعتين</string>
+    <string name="daybefore">قبل يوم</string>
+
+    <string name="ch_title">عنوان الموعد مطلوب</string>
+    <string name="ch_name">اسم الطفل مطلوب</string>
+    <string name="deleted">تم المسح</string>
+</resources>
