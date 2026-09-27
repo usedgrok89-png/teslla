@@ -6,3 +6,5 @@ shots/
 chain.pem
 proxy-ca.pem
 tools/truststore.jks
+chain.pemnawk
+proxy-ca.pemnkeytool
