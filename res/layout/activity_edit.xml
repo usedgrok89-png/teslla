@@ -104,6 +104,14 @@
                 android:layout_height="48dp"
                 android:background="@color/card" />
 
+            <TextView style="@style/lbl" android:text="@string/sound" />
+
+            <Spinner
+                android:id="@+id/fSound"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:background="@color/card" />
+
             <TextView style="@style/lbl" android:text="@string/note" />
 
             <EditText

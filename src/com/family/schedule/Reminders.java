@@ -6,21 +6,59 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.media.AudioAttributes;
+import android.media.RingtoneManager;
+import android.net.Uri;
 import android.os.Build;
+import android.provider.Settings;
 
 public class Reminders {
 
-    static final String CH = "appts";
+    /** Channel ids are versioned: Android channels are immutable once created, so a new
+     *  sound must live in a new channel id or already-installed apps keep the old silent one. */
+    private static final String[] CH_ID = {"appts_s0", "appts_s1", "appts_s2"};
+    private static final String[] CH_NAME = {"تنبيه بصوت مميز", "تنبيه بصوت هادي", "تنبيه بدون صوت"};
+    private static final int[] CH_RES = {R.raw.ding, R.raw.soft, 0};
+
+    public static final int SND_COUNT = 3;
+
     private static final String ACTION = "com.family.schedule.FIRE";
 
-    public static void ensureChannel(Context c) {
+    static int clampSnd(int s) {
+        return s < 0 || s >= SND_COUNT ? 0 : s;
+    }
+
+    static String channelId(int snd) {
+        return CH_ID[clampSnd(snd)];
+    }
+
+    public static void ensureChannel(Context c, int snd) {
+        snd = clampSnd(snd);
         if (Build.VERSION.SDK_INT < 26) return;
         NotificationManager nm = (NotificationManager) c.getSystemService(Context.NOTIFICATION_SERVICE);
         if (nm == null) return;
-        NotificationChannel ch = new NotificationChannel(CH, "تنبيه المواعيد", NotificationManager.IMPORTANCE_HIGH);
+        NotificationChannel ch = new NotificationChannel(CH_ID[snd], CH_NAME[snd], NotificationManager.IMPORTANCE_HIGH);
+        AudioAttributes attrs = new AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_NOTIFICATION)
+                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                .build();
+        if (CH_RES[snd] == 0) {
+            ch.setSound(null, null);
+        } else {
+            Uri u = new Uri.Builder()
+                    .scheme("android.resource")
+                    .authority(c.getPackageName())
+                    .appendPath(String.valueOf(CH_RES[snd]))
+                    .build();
+            ch.setSound(u, attrs);
+        }
         ch.enableVibration(true);
         ch.setShowBadge(true);
         nm.createNotificationChannel(ch);
+    }
+
+    public static void ensureAll(Context c) {
+        for (int i = 0; i < SND_COUNT; i++) ensureChannel(c, i);
     }
 
     static int rc(String id) {

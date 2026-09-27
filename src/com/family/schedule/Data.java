@@ -31,6 +31,7 @@ public class Data {
         public String note = "";
         public long when;
         public int lead = 15;
+        public int snd = 0;
         public boolean done;
     }
 
@@ -116,6 +117,7 @@ public class Data {
                 o.put("n", a.note);
                 o.put("w", a.when);
                 o.put("l", a.lead);
+                o.put("s", a.snd);
                 o.put("d", a.done ? 1 : 0);
                 as.put(o);
             }
@@ -155,6 +157,7 @@ public class Data {
                     a.note = o.optString("n");
                     a.when = o.optLong("w");
                     a.lead = o.optInt("l", 15);
+                    a.snd = o.optInt("s", 0);
                     a.done = o.optInt("d", 0) == 1;
                     list.add(a);
                 }

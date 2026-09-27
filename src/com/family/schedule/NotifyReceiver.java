@@ -8,18 +8,21 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.media.RingtoneManager;
+import android.net.Uri;
 import android.os.Build;
 
 public class NotifyReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context c, Intent in) {
-        Reminders.ensureChannel(c);
-
         String id = in == null ? null : in.getStringExtra("id");
         Data d = Data.get(c);
         Data.Appt a = d.find(id);
         if (a == null || a.done) return;
+
+        int snd = Reminders.clampSnd(a.snd);
+        Reminders.ensureChannel(c, snd);
 
         NotificationManager nm = (NotificationManager) c.getSystemService(Context.NOTIFICATION_SERVICE);
         if (nm == null) return;
@@ -41,10 +44,15 @@ public class NotifyReceiver extends BroadcastReceiver {
 
         Notification.Builder b;
         if (Build.VERSION.SDK_INT >= 26) {
-            b = new Notification.Builder(c, Reminders.CH);
+            b = new Notification.Builder(c, Reminders.channelId(snd));
         } else {
-            b = new Notification.Builder(c);
-            b.setPriority(Notification.PRIORITY_HIGH);
+            b = new Notification.Builder(c).setPriority(Notification.PRIORITY_HIGH);
+            if (snd == 2) {
+                b.setSound((Uri) null);
+                b.setVibrate((long[]) null);
+            } else {
+                b.setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION));
+            }
         }
         b.setSmallIcon(R.drawable.ic_stat)
                 .setContentTitle(a.title)

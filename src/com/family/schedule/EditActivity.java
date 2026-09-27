@@ -32,7 +32,7 @@ public class EditActivity extends Activity {
 
     private EditText fTitle, fNote;
     private Button fDate, fTime;
-    private Spinner fChild, fLead;
+    private Spinner fChild, fLead, fSound;
     private Calendar when;
 
     @Override
@@ -47,6 +47,7 @@ public class EditActivity extends Activity {
         fTime = findViewById(R.id.fTime);
         fChild = findViewById(R.id.fChild);
         fLead = findViewById(R.id.fLead);
+        fSound = findViewById(R.id.fSound);
 
         String id = getIntent() == null ? null : getIntent().getStringExtra("id");
         a = d.find(id);
@@ -104,6 +105,13 @@ public class EditActivity extends Activity {
             fLead.setSelection(indexOf(15));
         }
 
+        String[] sndTxt = {getString(R.string.snd_bright), getString(R.string.snd_soft), getString(R.string.snd_none)};
+        ArrayAdapter<String> sa = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, sndTxt);
+        sa.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        fSound.setAdapter(sa);
+        fSound.setSelection(Reminders.clampSnd(isNew ? 0 : a.snd));
+        Reminders.ensureAll(this);
+
         if (isNew) fTitle.requestFocus();
 
         fDate.setOnClickListener(new View.OnClickListener() {
@@ -154,6 +162,7 @@ public class EditActivity extends Activity {
                 a.note = fNote.getText().toString().trim();
                 a.childId = kidIds.get(fChild.getSelectedItemPosition());
                 a.lead = LEADS[fLead.getSelectedItemPosition()];
+                a.snd = fSound.getSelectedItemPosition();
                 a.when = when.getTimeInMillis();
                 d.put(a);
                 Reminders.scheduleAll(EditActivity.this);

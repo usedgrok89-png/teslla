@@ -84,7 +84,7 @@ public class MainActivity extends Activity {
             }
         });
 
-        Reminders.ensureChannel(this);
+        Reminders.ensureAll(this);
         askNotify();
     }
 

@@ -14,6 +14,8 @@ BT="$SDK/build-tools/$BT_VER"
 AJ="$SDK/platforms/android-34/android.jar"
 OUT="$ROOT/build"
 APK="$ROOT/app-release.apk"
+VERSION_CODE="${VERSION_CODE:-2}"
+VERSION_NAME="${VERSION_NAME:-1.1}"
 
 if [ ! -x "$BT/aapt2" ] || [ ! -f "$AJ" ]; then
   echo "محتاج Android SDK (build-tools $BT_VER + platform android-34)."
@@ -23,6 +25,7 @@ fi
 
 python3 tools/make_icons.py >/dev/null
 python3 tools/make_stat_icon.py >/dev/null
+python3 tools/make_sounds.py >/dev/null
 
 rm -rf "$OUT"
 mkdir -p "$OUT/compiled" "$OUT/gen" "$OUT/classes" "$OUT/dex"
@@ -38,8 +41,8 @@ echo "==> aapt2 link"
   --java "$OUT/gen" \
   --min-sdk-version 21 \
   --target-sdk-version 34 \
-  --version-code 1 \
-  --version-name 1.0 \
+  --version-code $VERSION_CODE \
+  --version-name $VERSION_NAME \
   --no-version-vectors \
   "$OUT/compiled/res.zip"
 
@@ -64,11 +67,17 @@ cp "$OUT/base.apk" "$OUT/unsigned.apk"
 "$BT/zipalign" -f -p 4 "$OUT/unsigned.apk" "$OUT/aligned.apk"
 
 if [ ! -f "$ROOT/release.keystore" ]; then
-  echo "==> generating release keystore"
-  keytool -genkeypair -v -keystore "$ROOT/release.keystore" \
-    -storepass family2024 -keypass family2024 -alias family \
-    -keyalg RSA -keysize 2048 -validity 10950 \
-    -dname "CN=Family Schedule, OU=App, O=Family, L=, S=, C=EG" >/dev/null 2>&1
+  cat <<'EOF'
+
+  ==========================================================================
+  release.keystore مفقود — التوقف هنا مقصود.
+  مفتاح توقيع جديد = أندرويد هيعتبره تطبيق مختلف ومينفعش تحدث للنسخة دي.
+  استرجعه من الريبو:  git show origin/main:release.keystore > release.keystore
+  (متعملش create-key جديد غير لو الترا بتاعك الأول كسر فعلاً)
+  ==========================================================================
+
+EOF
+  exit 1
 fi
 
 echo "==> sign"

@@ -39,6 +39,11 @@
     <string name="hour2">قبل ساعتين</string>
     <string name="daybefore">قبل يوم</string>
 
+    <string name="sound">صوت التنبيه</string>
+    <string name="snd_bright">مميز 🔔</string>
+    <string name="snd_soft">هادي</string>
+    <string name="snd_none">بدون صوت</string>
+
     <string name="ch_title">عنوان الموعد مطلوب</string>
     <string name="ch_name">اسم الطفل مطلوب</string>
     <string name="deleted">تم المسح</string>
