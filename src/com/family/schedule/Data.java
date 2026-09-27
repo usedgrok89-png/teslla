@@ -7,6 +7,9 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
 public class Data {
 
@@ -32,6 +35,11 @@ public class Data {
         public long when;
         public int lead = 15;
         public int snd = 0;
+        /** weekday bitmask, 0 == one-off. bit i == Calendar.SUNDAY + i */
+        public int days = 0;
+        /** occurrence timestamp -> Recur.PENDING / DONE / MISSED */
+        public final HashMap<Long, Integer> st = new HashMap<>();
+        /** legacy mirror of the single-occurrence state, kept for pre-1.2 data */
         public boolean done;
     }
 
@@ -53,6 +61,15 @@ public class Data {
         if (id == null) return null;
         for (int i = 0; i < kids.size(); i++) if (kids.get(i).id.equals(id)) return kids.get(i);
         return null;
+    }
+
+    /** single-occurrence helper kept for one-off appointments */
+    public static boolean done(Data.Appt a) {
+        return Recur.status(a, a.when) == Recur.DONE;
+    }
+
+    public static boolean finished(Data.Appt a) {
+        return Recur.status(a, a.when) != Recur.PENDING;
     }
 
     public Appt find(String id) {
@@ -96,7 +113,7 @@ public class Data {
         save();
     }
 
-    private void save() {
+    public void save() {
         try {
             JSONArray ks = new JSONArray();
             for (int i = 0; i < kids.size(); i++) {
@@ -118,7 +135,15 @@ public class Data {
                 o.put("w", a.when);
                 o.put("l", a.lead);
                 o.put("s", a.snd);
-                o.put("d", a.done ? 1 : 0);
+                o.put("w2", a.days);
+                JSONObject stj = new JSONObject();
+                Iterator<Map.Entry<Long, Integer>> it = a.st.entrySet().iterator();
+                while (it.hasNext()) {
+                    Map.Entry<Long, Integer> e = it.next();
+                    stj.put(String.valueOf(e.getKey()), e.getValue());
+                }
+                o.put("st", stj);
+                o.put("d", done(a) ? 1 : 0);
                 as.put(o);
             }
             JSONObject root = new JSONObject();
@@ -158,7 +183,20 @@ public class Data {
                     a.when = o.optLong("w");
                     a.lead = o.optInt("l", 15);
                     a.snd = o.optInt("s", 0);
+                    a.days = o.optInt("w2", 0);
+                    JSONObject stj = o.optJSONObject("st");
+                    if (stj != null) {
+                        java.util.Iterator<String> itk = stj.keys();
+                        while (itk.hasNext()) {
+                            String k = itk.next();
+                            try {
+                                a.st.put(Long.parseLong(k), stj.getInt(k));
+                            } catch (Exception ignored) {
+                            }
+                        }
+                    }
                     a.done = o.optInt("d", 0) == 1;
+                    if (a.done) a.st.put(a.when, Recur.DONE);
                     list.add(a);
                 }
             }

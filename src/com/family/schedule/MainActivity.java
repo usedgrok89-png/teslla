@@ -41,6 +41,17 @@ public class MainActivity extends Activity {
     private final ArrayList<Object> rows = new ArrayList<>();
     private String filter = null;
 
+    /** one rendered line: an appointment pinned to a single occurrence */
+    private static class Row {
+        final Data.Appt a;
+        final long occ;
+
+        Row(Data.Appt a, long occ) {
+            this.a = a;
+            this.occ = occ;
+        }
+    }
+
     @Override
     protected void onCreate(Bundle state) {
         super.onCreate(state);
@@ -57,15 +68,18 @@ public class MainActivity extends Activity {
         list.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             public void onItemClick(AdapterView<?> p, View v, int pos, long id) {
                 Object o = rows.get(pos);
-                if (o instanceof Data.Appt) open((Data.Appt) o);
+                if (o instanceof Row) {
+                    Row r = (Row) o;
+                    open(r.a, r.occ);
+                }
             }
         });
 
         list.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
             public boolean onItemLongClick(AdapterView<?> p, View v, int pos, long id) {
                 Object o = rows.get(pos);
-                if (o instanceof Data.Appt) {
-                    menu((Data.Appt) o);
+                if (o instanceof Row) {
+                    menu((Row) o);
                     return true;
                 }
                 return false;
@@ -74,7 +88,7 @@ public class MainActivity extends Activity {
 
         findViewById(R.id.add).setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                open(null);
+                open(null, 0L);
             }
         });
 
@@ -116,16 +130,18 @@ public class MainActivity extends Activity {
     private void rebuild() {
         rows.clear();
         long today = Fmt.startOfToday();
-        List<Data.Appt> fut = new ArrayList<>();
-        List<Data.Appt> past = new ArrayList<>();
+        long now = System.currentTimeMillis();
+        List<Row> fut = new ArrayList<>();
+        List<Row> past = new ArrayList<>();
         for (int i = 0; i < d.list.size(); i++) {
             Data.Appt a = d.list.get(i);
             if (filter != null && !filter.equals(a.childId)) continue;
-            if (a.when < today) past.add(a);
-            else fut.add(a);
+            Row r = new Row(a, Recur.representative(a, now));
+            if (r.occ < today) past.add(r);
+            else fut.add(r);
         }
-        Collections.sort(fut, byWhen);
-        Collections.sort(past, byWhenDesc);
+        Collections.sort(fut, byOcc);
+        Collections.sort(past, byOccDesc);
         group(fut, false);
         group(past, true);
 
@@ -144,62 +160,69 @@ public class MainActivity extends Activity {
         ((RowAdapter) list.getAdapter()).notifyDataSetChanged();
     }
 
-    private void group(List<Data.Appt> src, boolean past) {
+    private void group(List<Row> src, boolean past) {
         long last = -1;
         for (int i = 0; i < src.size(); i++) {
-            Data.Appt a = src.get(i);
-            long day = Fmt.dayNo(a.when);
+            Row r = src.get(i);
+            long day = Fmt.dayNo(r.occ);
             if (day != last) {
                 last = day;
                 if (past && i == 0) rows.add("مواعيد فاتت");
-                else rows.add(Fmt.dayTitle(a.when));
+                else rows.add(Fmt.dayTitle(r.occ));
             }
-            rows.add(a);
+            rows.add(r);
         }
     }
 
-    private static final Comparator<Data.Appt> byWhen = new Comparator<Data.Appt>() {
-        public int compare(Data.Appt x, Data.Appt y) {
-            return x.when < y.when ? -1 : (x.when > y.when ? 1 : 0);
+    private static final Comparator<Row> byOcc = new Comparator<Row>() {
+        public int compare(Row x, Row y) {
+            return x.occ < y.occ ? -1 : (x.occ > y.occ ? 1 : 0);
         }
     };
 
-    private static final Comparator<Data.Appt> byWhenDesc = new Comparator<Data.Appt>() {
-        public int compare(Data.Appt x, Data.Appt y) {
-            return x.when > y.when ? -1 : (x.when < y.when ? 1 : 0);
+    private static final Comparator<Row> byOccDesc = new Comparator<Row>() {
+        public int compare(Row x, Row y) {
+            return x.occ > y.occ ? -1 : (x.occ < y.occ ? 1 : 0);
         }
     };
 
-    private void open(Data.Appt a) {
+    private void open(Data.Appt a, long occ) {
         Intent i = new Intent(this, EditActivity.class);
-        if (a != null) i.putExtra("id", a.id);
-        else if (filter != null) i.putExtra("child", filter);
+        if (a != null) {
+            i.putExtra("id", a.id);
+            i.putExtra("occ", occ);
+        } else if (filter != null) {
+            i.putExtra("child", filter);
+        }
         startActivity(i);
     }
 
     // ---------- row menu ----------
 
-    private void menu(final Data.Appt a) {
+    private void menu(final Row row) {
+        final Data.Appt a = row.a;
+        int st = Recur.status(a, row.occ);
         String[] items = {
                 getString(R.string.edit),
-                a.done ? getString(R.string.mark_not) : getString(R.string.mark_done),
+                st != Recur.DONE ? getString(R.string.mark_done) : getString(R.string.mark_not),
+                st != Recur.MISSED ? getString(R.string.mark_missed) : getString(R.string.mark_pending),
                 getString(R.string.postpone),
                 getString(R.string.del)
         };
         new AlertDialog.Builder(this)
-                .setTitle(a.title)
+                .setTitle(a.title + "\n" + Fmt.dateBtn(row.occ) + "  " + Fmt.time(row.occ))
                 .setItems(items, new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int which) {
                         if (which == 0) {
-                            open(a);
+                            open(a, row.occ);
                         } else if (which == 1) {
-                            a.done = !a.done;
-                            d.put(a);
-                            Reminders.scheduleAll(MainActivity.this);
-                            rebuild();
+                            setStatus(row, st == Recur.DONE ? Recur.PENDING : Recur.DONE);
                         } else if (which == 2) {
-                            a.when = Fmt.nextDay(a.when);
-                            a.done = false;
+                            setStatus(row, st == Recur.MISSED ? Recur.PENDING : Recur.MISSED);
+                        } else if (which == 3) {
+                            a.when = Fmt.nextDay(row.occ);
+                            Recur.setStatus(a, row.occ, Recur.PENDING);
+                            if (!Recur.repeats(a)) a.done = false;
                             d.put(a);
                             Reminders.scheduleAll(MainActivity.this);
                             rebuild();
@@ -210,6 +233,14 @@ public class MainActivity extends Activity {
                 })
                 .setNegativeButton(R.string.cancel, null)
                 .show();
+    }
+
+    private void setStatus(Row row, int st) {
+        Recur.setStatus(row.a, row.occ, st);
+        if (!Recur.repeats(row.a)) row.a.done = st == Recur.DONE;
+        d.put(row.a);
+        Reminders.scheduleAll(this);
+        rebuild();
     }
 
     private void confirmDelete(final Data.Appt a) {
@@ -405,7 +436,9 @@ public class MainActivity extends Activity {
                 return t;
             }
 
-            final Data.Appt a = (Data.Appt) o;
+            final Row row = (Row) o;
+            final Data.Appt a = row.a;
+            final long occ = row.occ;
             View v = cv;
             if (v == null || cv instanceof TextView) v = inf.inflate(R.layout.item_appt, parent, false);
 
@@ -424,38 +457,39 @@ public class MainActivity extends Activity {
             g.setCornerRadius(6 * getResources().getDisplayMetrics().density);
             bar.setBackgroundDrawable(g);
 
-            time.setText(Fmt.time(a.when));
+            time.setText(Fmt.time(occ));
             time.setTextColor(col);
             title.setText(a.title);
 
             StringBuilder m = new StringBuilder();
             m.append(c == null ? "بدون طفل" : c.name);
+            if (Recur.repeats(a)) m.append("  •  🔁 ").append(Recur.daysLabel(a));
             if (a.note.length() > 0) m.append("  •  ").append(a.note);
             meta.setText(m.toString());
 
-            boolean late = a.when < System.currentTimeMillis();
-            if (a.done) {
+            int st = Recur.status(a, occ);
+            if (st == Recur.DONE) {
                 state.setText(R.string.done_lbl);
                 state.setTextColor(0xFF43A047);
-            } else if (late) {
+            } else if (st == Recur.MISSED) {
+                state.setText(R.string.missed_lbl);
+                state.setTextColor(0xFFC62828);
+            } else if (occ < System.currentTimeMillis()) {
                 state.setText(R.string.late);
                 state.setTextColor(0xFFC62828);
             } else {
-                state.setText(Fmt.left(a.when));
+                state.setText(Fmt.left(occ));
                 state.setTextColor(getResources().getColor(R.color.text_dim));
             }
 
-            title.setAlpha(a.done ? 0.45f : 1f);
-            meta.setAlpha(a.done ? 0.45f : 1f);
-            v.setAlpha(a.done ? 0.7f : 1f);
+            title.setAlpha(st == Recur.PENDING ? 1f : 0.45f);
+            meta.setAlpha(st == Recur.PENDING ? 1f : 0.45f);
+            v.setAlpha(st == Recur.PENDING ? 1f : 0.7f);
 
-            check.setAlpha(a.done ? 1f : 0.28f);
+            check.setAlpha(st == Recur.DONE ? 1f : 0.28f);
             check.setOnClickListener(new View.OnClickListener() {
                 public void onClick(View x) {
-                    a.done = !a.done;
-                    d.put(a);
-                    Reminders.scheduleAll(MainActivity.this);
-                    rebuild();
+                    setStatus(row, Recur.status(a, occ) == Recur.DONE ? Recur.PENDING : Recur.DONE);
                 }
             });
             return v;

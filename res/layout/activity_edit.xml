@@ -106,8 +106,53 @@
 
             <TextView style="@style/lbl" android:text="@string/sound" />
 
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <Spinner
+                    android:id="@+id/fSound"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_weight="1"
+                    android:background="@color/card" />
+
+                <Button
+                    android:id="@+id/fTest"
+                    android:layout_width="wrap_content"
+                    android:layout_height="48dp"
+                    android:layout_marginStart="10dp"
+                    android:background="@drawable/bg_btn_line"
+                    android:drawableStart="@drawable/ic_stat"
+                    android:drawablePadding="4dp"
+                    android:text="@string/test_sound"
+                    android:textAllCaps="false"
+                    android:textColor="@color/primary"
+                    android:textSize="14sp" />
+            </LinearLayout>
+
+            <TextView style="@style/lbl" android:text="@string/repeat" />
+
+            <LinearLayout
+                android:id="@+id/fDays"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal" />
+
+            <TextView
+                android:id="@+id/fRepHint"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:textColor="@color/text_dim"
+                android:textSize="12sp" />
+
+            <TextView style="@style/lbl" android:text="@string/status" />
+
             <Spinner
-                android:id="@+id/fSound"
+                android:id="@+id/fStatus"
                 android:layout_width="match_parent"
                 android:layout_height="48dp"
                 android:background="@color/card" />

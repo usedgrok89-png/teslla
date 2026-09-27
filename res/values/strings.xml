@@ -44,6 +44,23 @@
     <string name="snd_soft">هادي</string>
     <string name="snd_none">بدون صوت</string>
 
+    <string name="repeat">التكرار</string>
+    <string name="repeat_hint">مفيش تكرار • الموعد بتاريخ محدد</string>
+    <string name="repeat_on">يتكرر كل: %s</string>
+    <string name="once">مرة واحدة</string>
+
+    <string name="status">الحالة</string>
+    <string name="st_pending">متبقي</string>
+    <string name="st_done">تم التنفيذ</string>
+    <string name="st_missed">لم يتم التنفيذ</string>
+    <string name="missed_lbl">لم يتم</string>
+    <string name="mark_missed">لم يتم التنفيذ</string>
+    <string name="mark_pending">رجّعها متبقي</string>
+    <string name="occ_of">موعد يوم %s</string>
+
+    <string name="test_sound">تجربة</string>
+    <string name="test_sound_toast">لو مش سامح حاجة، جرّب من إعدادات الهاتف &gt; الأصوات &gt; تنبيه جدول العيلة</string>
+
     <string name="ch_title">عنوان الموعد مطلوب</string>
     <string name="ch_name">اسم الطفل مطلوب</string>
     <string name="deleted">تم المسح</string>

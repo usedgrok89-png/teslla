@@ -78,6 +78,14 @@ public class Fmt {
         return r.getTimeInMillis();
     }
 
+    public static int hourOf(long t) {
+        return cal(t).get(Calendar.HOUR_OF_DAY);
+    }
+
+    public static int minuteOf(long t) {
+        return cal(t).get(Calendar.MINUTE);
+    }
+
     public static String left(long t) {
         long ms = t - System.currentTimeMillis();
         if (ms <= 0) return "دلوقتي";

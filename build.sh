@@ -14,8 +14,8 @@ BT="$SDK/build-tools/$BT_VER"
 AJ="$SDK/platforms/android-34/android.jar"
 OUT="$ROOT/build"
 APK="$ROOT/app-release.apk"
-VERSION_CODE="${VERSION_CODE:-2}"
-VERSION_NAME="${VERSION_NAME:-1.1}"
+VERSION_CODE="${VERSION_CODE:-3}"
+VERSION_NAME="${VERSION_NAME:-1.2}"
 
 if [ ! -x "$BT/aapt2" ] || [ ! -f "$AJ" ]; then
   echo "محتاج Android SDK (build-tools $BT_VER + platform android-34)."

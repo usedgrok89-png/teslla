@@ -7,9 +7,13 @@ import android.app.TimePickerDialog;
 import android.content.DialogInterface;
 import android.os.Bundle;
 import android.view.View;
+import android.graphics.Color;
+import android.graphics.drawable.GradientDrawable;
+import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -30,10 +34,19 @@ public class EditActivity extends Activity {
     private boolean isNew;
     private final ArrayList<String> kidIds = new ArrayList<>();
 
+    private static final String[] DAY_FULL = {
+            "الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"
+    };
+
     private EditText fTitle, fNote;
     private Button fDate, fTime;
-    private Spinner fChild, fLead, fSound;
+    private Spinner fChild, fLead, fSound, fStatus;
+    private LinearLayout fDays;
+    private TextView fRepHint;
     private Calendar when;
+    private long occIn = 0L;
+    private int daysMask = 0;
+    private final TextView[] dayBtns = new TextView[7];
 
     @Override
     protected void onCreate(Bundle state) {
@@ -48,10 +61,14 @@ public class EditActivity extends Activity {
         fChild = findViewById(R.id.fChild);
         fLead = findViewById(R.id.fLead);
         fSound = findViewById(R.id.fSound);
+        fStatus = findViewById(R.id.fStatus);
+        fDays = findViewById(R.id.fDays);
+        fRepHint = findViewById(R.id.fRepHint);
 
         String id = getIntent() == null ? null : getIntent().getStringExtra("id");
         a = d.find(id);
         isNew = a == null;
+        if (getIntent() != null) occIn = getIntent().getLongExtra("occ", 0L);
 
         if (isNew) {
             a = new Data.Appt();
@@ -112,6 +129,27 @@ public class EditActivity extends Activity {
         fSound.setSelection(Reminders.clampSnd(isNew ? 0 : a.snd));
         Reminders.ensureAll(this);
 
+        final String[] stTxt = {
+                getString(R.string.st_pending), getString(R.string.st_done), getString(R.string.st_missed)
+        };
+        ArrayAdapter<String> sta = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, stTxt);
+        sta.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        fStatus.setAdapter(sta);
+        fStatus.setSelection(isNew || occIn == 0L
+                ? Recur.PENDING
+                : Recur.status(a, occIn));
+
+        buildDayToggles(isNew ? 0 : a.days);
+
+        findViewById(R.id.fTest).setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                int sn = fSound.getSelectedItemPosition();
+                Reminders.ensureChannel(EditActivity.this, sn);
+                Reminders.preview(EditActivity.this, sn);
+                Toast.makeText(EditActivity.this, R.string.test_sound_toast, Toast.LENGTH_LONG).show();
+            }
+        });
+
         if (isNew) fTitle.requestFocus();
 
         fDate.setOnClickListener(new View.OnClickListener() {
@@ -164,6 +202,29 @@ public class EditActivity extends Activity {
                 a.lead = LEADS[fLead.getSelectedItemPosition()];
                 a.snd = fSound.getSelectedItemPosition();
                 a.when = when.getTimeInMillis();
+                a.days = daysMask;
+
+                if (Recur.repeats(a)) {
+                    int dow = when.get(Calendar.DAY_OF_WEEK) - 1;
+                    if (((a.days >> dow) & 1) == 0) {
+                        // anchor landed on a non-repeated day: roll forward to the nearest one
+                        for (int i = 0; i < 7; i++) {
+                            when.add(Calendar.DAY_OF_YEAR, 1);
+                            if (((a.days >> (when.get(Calendar.DAY_OF_WEEK) - 1)) & 1) == 1) break;
+                        }
+                        a.when = when.getTimeInMillis();
+                        fDate.setText(Fmt.dateBtn(a.when));
+                    }
+                }
+
+                int st = fStatus.getSelectedItemPosition();
+                if (occIn != 0L) {
+                    Recur.setStatus(a, occIn, st);
+                    if (!Recur.repeats(a)) a.done = st == Recur.DONE;
+                } else if (!Recur.repeats(a)) {
+                    a.done = st == Recur.DONE;
+                    Recur.setStatus(a, a.when, st);
+                }
                 d.put(a);
                 Reminders.scheduleAll(EditActivity.this);
                 finish();
@@ -193,6 +254,57 @@ public class EditActivity extends Activity {
                 }
             });
         }
+    }
+
+    /** seven toggle chips, one per weekday; empty selection means "one-off" */
+    private void buildDayToggles(int initial) {
+        fDays.removeAllViews();
+        daysMask = initial;
+        float den = getResources().getDisplayMetrics().density;
+        for (int i = 0; i < 7; i++) {
+            final int idx = i;
+            TextView t = new TextView(this);
+            t.setText(Recur.DAY_SHORT[i]);
+            t.setTextSize(13f);
+            t.setGravity(android.view.Gravity.CENTER);
+            t.setPadding(0, (int) (10 * den), 0, (int) (10 * den));
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
+            lp.setMarginEnd((int) (5 * den));
+            if (i == 6) lp.setMarginEnd(0);
+            t.setLayoutParams(lp);
+            t.setOnClickListener(new View.OnClickListener() {
+                public void onClick(View v) {
+                    daysMask ^= (1 << idx);
+                    paintDays();
+                }
+            });
+            dayBtns[i] = t;
+            fDays.addView(t);
+        }
+        paintDays();
+    }
+
+    private void paintDays() {
+        for (int i = 0; i < 7; i++) {
+            boolean on = ((daysMask >> i) & 1) == 1;
+            GradientDrawable g = new GradientDrawable();
+            g.setShape(GradientDrawable.RECTANGLE);
+            g.setCornerRadius(8 * getResources().getDisplayMetrics().density);
+            g.setColor(on ? 0xFF00897B : 0xFFFFFFFF);
+            g.setStroke(1, 0xFF00897B);
+            dayBtns[i].setBackgroundDrawable(g);
+            dayBtns[i].setTextColor(on ? Color.WHITE : 0xFF00897B);
+            dayBtns[i].setAlpha(on ? 1f : 0.55f);
+        }
+        fRepHint.setText(daysMask == 0
+                ? getString(R.string.repeat_hint)
+                : getString(R.string.repeat_on, Recur.daysLabel(maskAppt())));
+    }
+
+    private Data.Appt maskAppt() {
+        Data.Appt t = new Data.Appt();
+        t.days = daysMask;
+        return t;
     }
 
     private static int indexOf(int lead) {
