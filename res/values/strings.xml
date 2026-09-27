@@ -58,6 +58,14 @@
     <string name="mark_pending">رجّعها متبقي</string>
     <string name="occ_of">موعد يوم %s</string>
 
+    <string name="log">سجل التنفيذ</string>
+    <string name="log_empty">لسه مفيش تنفيذات متسجّلة</string>
+    <string name="log_at">سُجّل %1$s %2$s</string>
+    <string name="log_done">تم التنفيذ</string>
+    <string name="log_missed">لم يتم التنفيذ</string>
+    <string name="log_count">آخر %d تنفيذ</string>
+    <string name="next_occ">التالي: %1$s • %2$s</string>
+
     <string name="test_sound">تجربة</string>
     <string name="test_sound_toast">لو مش سامح حاجة، جرّب من إعدادات الهاتف &gt; الأصوات &gt; تنبيه جدول العيلة</string>
 

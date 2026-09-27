@@ -74,8 +74,32 @@ public class Recur {
     }
 
     public static void setStatus(Data.Appt a, long occ, int s) {
-        if (s == PENDING) a.st.remove(occ);
-        else a.st.put(occ, s);
+        if (s == PENDING) {
+            a.st.remove(occ);
+            a.stAt.remove(occ);
+        } else {
+            a.st.put(occ, s);
+            a.stAt.put(occ, System.currentTimeMillis());
+        }
+    }
+
+    /** first occurrence strictly after `after`, or -1 when the series ended */
+    public static long nextAfter(Data.Appt a, long after) {
+        long[] f = next(a, after + 1, 1);
+        return f.length > 0 ? f[0] : -1L;
+    }
+
+    /** execution log, newest first. Each row is {occurrence, status, recordedAt}. */
+    public static long[][] log(Data.Appt a) {
+        java.util.ArrayList<Long> keys = new java.util.ArrayList<Long>(a.st.keySet());
+        java.util.Collections.sort(keys);
+        long[][] out = new long[keys.size()][];
+        for (int i = 0; i < keys.size(); i++) {
+            long occ = keys.get(i);
+            Long at = a.stAt.get(occ);
+            out[keys.size() - 1 - i] = new long[]{occ, status(a, occ), at == null ? 0L : at};
+        }
+        return out;
     }
 
     /** Human readable list of the selected weekdays, e.g. "السبت - الأحد". */

@@ -39,6 +39,8 @@ public class Data {
         public int days = 0;
         /** occurrence timestamp -> Recur.PENDING / DONE / MISSED */
         public final HashMap<Long, Integer> st = new HashMap<>();
+        /** occurrence timestamp -> when the user recorded that status (log trail) */
+        public final HashMap<Long, Long> stAt = new HashMap<>();
         /** legacy mirror of the single-occurrence state, kept for pre-1.2 data */
         public boolean done;
     }
@@ -143,6 +145,13 @@ public class Data {
                     stj.put(String.valueOf(e.getKey()), e.getValue());
                 }
                 o.put("st", stj);
+                JSONObject atj = new JSONObject();
+                Iterator<Map.Entry<Long, Long>> ita = a.stAt.entrySet().iterator();
+                while (ita.hasNext()) {
+                    Map.Entry<Long, Long> e = ita.next();
+                    atj.put(String.valueOf(e.getKey()), e.getValue());
+                }
+                o.put("sta", atj);
                 o.put("d", done(a) ? 1 : 0);
                 as.put(o);
             }
@@ -191,6 +200,17 @@ public class Data {
                             String k = itk.next();
                             try {
                                 a.st.put(Long.parseLong(k), stj.getInt(k));
+                            } catch (Exception ignored) {
+                            }
+                        }
+                    }
+                    JSONObject atj = o.optJSONObject("sta");
+                    if (atj != null) {
+                        java.util.Iterator<String> ita = atj.keys();
+                        while (ita.hasNext()) {
+                            String k = ita.next();
+                            try {
+                                a.stAt.put(Long.parseLong(k), atj.getLong(k));
                             } catch (Exception ignored) {
                             }
                         }

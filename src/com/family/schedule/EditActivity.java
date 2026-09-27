@@ -42,7 +42,7 @@ public class EditActivity extends Activity {
     private Button fDate, fTime;
     private Spinner fChild, fLead, fSound, fStatus;
     private LinearLayout fDays;
-    private TextView fRepHint;
+    private TextView fRepHint, fLog;
     private Calendar when;
     private long occIn = 0L;
     private int daysMask = 0;
@@ -64,6 +64,7 @@ public class EditActivity extends Activity {
         fStatus = findViewById(R.id.fStatus);
         fDays = findViewById(R.id.fDays);
         fRepHint = findViewById(R.id.fRepHint);
+        fLog = findViewById(R.id.fLog);
 
         String id = getIntent() == null ? null : getIntent().getStringExtra("id");
         a = d.find(id);
@@ -140,6 +141,7 @@ public class EditActivity extends Activity {
                 : Recur.status(a, occIn));
 
         buildDayToggles(isNew ? 0 : a.days);
+        paintLog();
 
         findViewById(R.id.fTest).setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
@@ -254,6 +256,25 @@ public class EditActivity extends Activity {
                 }
             });
         }
+    }
+
+    private void paintLog() {
+        if (isNew) {
+            fLog.setText(R.string.log_empty);
+            return;
+        }
+        java.util.ArrayList<String> lines = RecurLog.lines(this, a, 10);
+        if (lines.isEmpty()) {
+            fLog.setText(R.string.log_empty);
+            return;
+        }
+        StringBuilder sb = new StringBuilder(getString(R.string.log_count, lines.size()));
+        sb.append('\n');
+        for (int i = 0; i < lines.size(); i++) {
+            sb.append("\u2022 ").append(lines.get(i));
+            if (i < lines.size() - 1) sb.append('\n');
+        }
+        fLog.setText(sb.toString());
     }
 
     /** seven toggle chips, one per weekday; empty selection means "one-off" */

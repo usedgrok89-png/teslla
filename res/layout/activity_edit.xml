@@ -157,6 +157,17 @@
                 android:layout_height="48dp"
                 android:background="@color/card" />
 
+            <TextView style="@style/lbl" android:text="@string/log" />
+
+            <TextView
+                android:id="@+id/fLog"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_card"
+                android:padding="12dp"
+                android:textColor="@color/text_dim"
+                android:textSize="12sp" />
+
             <TextView style="@style/lbl" android:text="@string/note" />
 
             <EditText

@@ -40,6 +40,13 @@ public class MainActivity extends Activity {
     private LinearLayout chips;
     private final ArrayList<Object> rows = new ArrayList<>();
     private String filter = null;
+    private final android.os.Handler tick = new android.os.Handler();
+    private final Runnable tickRun = new Runnable() {
+        public void run() {
+            rebuild();
+            tick.postDelayed(this, 30000L);
+        }
+    };
 
     /** one rendered line: an appointment pinned to a single occurrence */
     private static class Row {
@@ -123,6 +130,14 @@ public class MainActivity extends Activity {
         Reminders.scheduleAll(this);
         buildChips();
         rebuild();
+        tick.removeCallbacks(tickRun);
+        tick.postDelayed(tickRun, 30000L);
+    }
+
+    @Override
+    protected void onPause() {
+        tick.removeCallbacks(tickRun);
+        super.onPause();
     }
 
     // ---------- list ----------
@@ -206,6 +221,7 @@ public class MainActivity extends Activity {
                 getString(R.string.edit),
                 st != Recur.DONE ? getString(R.string.mark_done) : getString(R.string.mark_not),
                 st != Recur.MISSED ? getString(R.string.mark_missed) : getString(R.string.mark_pending),
+                getString(R.string.log),
                 getString(R.string.postpone),
                 getString(R.string.del)
         };
@@ -220,6 +236,8 @@ public class MainActivity extends Activity {
                         } else if (which == 2) {
                             setStatus(row, st == Recur.MISSED ? Recur.PENDING : Recur.MISSED);
                         } else if (which == 3) {
+                            showLog(a);
+                        } else if (which == 4) {
                             a.when = Fmt.nextDay(row.occ);
                             Recur.setStatus(a, row.occ, Recur.PENDING);
                             if (!Recur.repeats(a)) a.done = false;
@@ -232,6 +250,18 @@ public class MainActivity extends Activity {
                     }
                 })
                 .setNegativeButton(R.string.cancel, null)
+                .show();
+    }
+
+    private void showLog(Data.Appt a) {
+        ArrayList<String> lines = RecurLog.lines(this, a, 12);
+        CharSequence[] body = lines.isEmpty()
+                ? new CharSequence[]{getString(R.string.log_empty)}
+                : lines.toArray(new CharSequence[0]);
+        new AlertDialog.Builder(this)
+                .setTitle(a.title + " \u2014 " + getString(R.string.log))
+                .setItems(body, null)
+                .setPositiveButton(R.string.cancel, null)
                 .show();
     }
 
@@ -447,6 +477,7 @@ public class MainActivity extends Activity {
             TextView state = v.findViewById(R.id.state);
             TextView title = v.findViewById(R.id.title);
             TextView meta = v.findViewById(R.id.meta);
+            TextView next = v.findViewById(R.id.next);
             ImageView check = v.findViewById(R.id.check);
 
             Data.Child c = d.kid(a.childId);
@@ -480,6 +511,14 @@ public class MainActivity extends Activity {
             } else {
                 state.setText(Fmt.left(occ));
                 state.setTextColor(getResources().getColor(R.color.text_dim));
+            }
+
+            long nx = Recur.repeats(a) ? Recur.nextAfter(a, occ) : -1L;
+            if (nx > 0) {
+                next.setVisibility(View.VISIBLE);
+                next.setText(getString(R.string.next_occ, Fmt.dayTitle(nx), Fmt.left(nx)));
+            } else {
+                next.setVisibility(View.GONE);
             }
 
             title.setAlpha(st == Recur.PENDING ? 1f : 0.45f);
